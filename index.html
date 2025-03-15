@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing System</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2, h3 {
+    text-align: center;
+    color: #333;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+input {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+#bill {
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+#total-amount {
+    text-align: right;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+#print-button, #save-button, #reset-button {
+    background-color: #007bff;
+    margin-top: 10px;
+}
+
+#print-button:hover, #save-button:hover, #reset-button:hover {
+    background-color: #0056b3;
+}
+
+#save-button {
+    background-color: #28a745;
+}
+
+#save-button:hover {
+    background-color: #218838;
+}
+
+#reset-button {
+    background-color: #dc3545;
+}
+
+#reset-button:hover {
+    background-color: #c82333;
+}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Billing System</h1>
+        <form id="bill-form">
+            <input type="text" id="customer-name" placeholder="Customer Name" required>
+            <input type="text" id="phone-number" placeholder="Phone Number" required>
+            <input type="text" id="gst-number" placeholder="GST Number" required>
+            <input type="text" id="item" placeholder="Item Name" required>
+            <input type="number" id="price" placeholder="Price" required>
+            <input type="number" id="quantity" placeholder="Quantity" required>
+            <button type="submit">Add Item</button>
+        </form>
+        <div id="bill">
+            <h2>Bill</h2>
+            <p>Invoice No: <span id="invoice-number"></span></p>
+            <p>Date: <span id="invoice-date"></span></p>
+            <p>Customer Name: <span id="display-customer-name"></span></p>
+            <p>Phone Number: <span id="display-phone-number"></span></p>
+            <p>GST Number: <span id="display-gst-number"></span></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-items"></tbody>
+            </table>
+            <h3 id="total-amount">Total: ₹0.00</h3>
+            <button id="print-button">Print Bill</button>
+            <button id="save-button">Save Bill</button>
+            <button id="reset-button">Reset Bill</button>
+        </div>
+    </div>
+    <script>
+        let grandTotal = 0;
+let invoiceNumber = 1; // Starting invoice number
+
+document.getElementById('bill-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const customerName = document.getElementById('customer-name').value;
+    const phoneNumber = document.getElementById('phone-number').value;
+    const gstNumber = document.getElementById('gst-number').value;
+    const item = document.getElementById('item').value;
+    const price = parseFloat(document.getElementById('price').value);
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const total = price * quantity;
+
+    // Display customer details
+    document.getElementById('display-customer-name').innerText = customerName;
+    document.getElementById('display-phone-number').innerText = phoneNumber;
+    document.getElementById('display-gst-number').innerText = gstNumber;
+
+    // Display invoice number and date
+    document.getElementById('invoice-number').innerText = invoiceNumber++;
+    document.getElementById('invoice-date').innerText = new Date().toLocaleString();
+
+    const billItems = document.getElementById('bill-items');
+    const newRow = document.createElement('tr');
+
+    newRow.innerHTML = `
+        <td>${item}</td>
+        <td>₹${price.toFixed(2)}</td> <!-- Changed $ to ₹ -->
+        <td>${quantity}</td>
+        <td>₹${total.toFixed(2)}</td> <!-- Changed $ to ₹ -->
+    `;
+
+    billItems.appendChild(newRow);
+
+    updateTotal(total);
+    
+    // Clear the form
+    document.getElementById('bill-form').reset();
+});
+
+// Update total amount
+function updateTotal(amount) {
+    grandTotal += amount;
+    document.getElementById('total-amount').innerText = `Total: ₹${(grandTotal).toFixed(2)}`; // Double the total and change $ to ₹
+}
+
+// Print functionality
+document.getElementById('print-button').addEventListener('click', function() {
+    const printContent = document.querySelector('.container').innerHTML;
+    const printWindow = window.open('', '', 'height=600,width=800');
+    printWindow.document.write('<html><head><title>Print Bill</title>');
+    printWindow.document.write('<link rel="stylesheet" href="styles.css">'); // Include CSS for print
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(printContent.replace(/\$/g, '₹')); // Replace $ with ₹ in print content
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+});
+
+// Save functionality
+document.getElementById('save-button').addEventListener('click', function() {
+    const billData = {
+        invoiceNumber: document.getElementById('invoice-number').innerText,
+        date: document.getElementById('invoice-date').innerText,
+        customerName: document.getElementById('display-customer-name').innerText,
+        phoneNumber: document.getElementById('display-phone-number').innerText,
+        gstNumber: document.getElementById('display-gst-number').innerText,
+        items: [],
+        total: grandTotal // Double the total for saving
+    };
+
+    const rows = document.querySelectorAll('#bill-items tr');
+    rows.forEach(row => {
+        const item = row.cells[0].innerText;
+        const price = parseFloat(row.cells[1].innerText.replace('₹', '')); // Changed $ to ₹
+        const quantity = parseInt(row.cells[2].innerText);
+        const total = parseFloat(row.cells[3].innerText.replace('₹', '')); // Changed $ to ₹
+        billData.items.push({ item, price, quantity, total });
+    });
+
+    // Create a worksheet and workbook
+    const ws = XLSX.utils.json_to_sheet(billData.items.map(item => ({
+        Item: item.item,
+        Price: item.price,
+        Quantity: item.quantity,
+        Total: item.total
+    })));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bill Items');
+
+    // Add metadata
+    const metadata = {
+        InvoiceNumber: billData.invoiceNumber,
+        Date: billData.date,
+        CustomerName: billData.customerName,
+        PhoneNumber: billData.phoneNumber,
+        GSTNumber: billData.gstNumber,
+        Total: billData.total
+    };
+
+    const metadataSheet = XLSX.utils.json_to_sheet([metadata]);
+    XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
+
+    // Save the workbook
+    XLSX.writeFile(wb, `Invoice_${billData.invoiceNumber}.xlsx`);
+
+    // Reset the bill
+    resetBill();
+});
+
+// Reset functionality
+document.getElementById('reset-button').addEventListener('click', function() {
+    resetBill();
+});
+
+function resetBill() {
+    // Clear all displayed data
+    document.getElementById('display-customer-name').innerText = '';
+    document.getElementById('display-phone-number').innerText = '';
+    document.getElementById('display-gst-number').innerText = '';
+    document.getElementById('invoice-number').innerText = '';
+    document.getElementById('invoice-date').innerText = '';
+    document.getElementById('bill-items').innerHTML = '';
+    document.getElementById('total-amount').innerText = 'Total: ₹0.00'; // Changed $ to ₹
+    
+    // Reset totals
+    grandTotal = 0;
+    invoiceNumber = 1; 
+}
+    </script>
+</body>
+</html>
